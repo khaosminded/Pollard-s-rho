@@ -97,7 +97,7 @@ public class PollardsRho {
         BigInteger[] b = NEUTRAL.clone();
 
         int k = m.bitLength();
-        for (int i = 0; i <= k - 1; i++) {
+        for (int i = k-1; i >=0; i--) {
             b = mul(b, b, d, p);
             if (m.testBit(i)) {
                 b = mul(b, a, d, p);
