@@ -28,7 +28,9 @@ public class PollardsRho {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        int N=1;
+        System.err.close();
+        
+        int N=100;
         long k=0;
         long tmp=(2<<15)-17;
         BigInteger p = new BigInteger(tmp+"");
@@ -45,8 +47,7 @@ public class PollardsRho {
             }
         }
         k/=N;
-        System.out.println(k);
-
+        System.out.println("k.avg="+k+" #under the condition N="+N);
     }
 
     /**
