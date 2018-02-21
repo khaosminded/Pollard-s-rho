@@ -7,6 +7,8 @@ package pollardsrho;
 
 import java.math.BigInteger;
 import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -28,14 +30,19 @@ public class PollardsRho {
     public static void main(String[] args) {
         int N=1;
         long k=0;
-        long tmp=(2<<16)-17;
+        long tmp=(2<<15)-17;
         BigInteger p = new BigInteger(tmp+"");
         BigInteger d = new BigInteger("154");
         BigInteger n = new BigInteger("16339");
         BigInteger[] a = {new BigInteger("12"), new BigInteger("61833")};
         for(int i=0;i<N;i++)
         {
-            k+=check(a,d,p,n);
+            System.err.println("pollardsrho.PollardsRho.main()");
+            try {
+                k+=check(a,d,p,n);
+            } catch (Exception ex) {
+                Logger.getLogger(PollardsRho.class.getName()).log(Level.SEVERE, null, ex);
+            }
         }
         k/=N;
         System.out.println(k);
@@ -52,24 +59,29 @@ public class PollardsRho {
      */
     public static BigInteger[] mul(BigInteger[] a1, BigInteger[] a2, BigInteger d, BigInteger p) {
         BigInteger x, y;
-
+        //(a - b) mod p = ((a mod p - b mod p) + p) mod p
+        //(a / b) mod p = ((a mod p) * (b^(-1) mod p)) mod p
         BigInteger x1 = a1[0], x2 = a2[0];
         BigInteger y1 = a1[1], y2 = a2[1];
 
-        BigInteger x1y2 = x1.multiply(y2).mod(p);
-        BigInteger y1x2 = y1.multiply(x2).mod(p);
+        BigInteger x1y2 = x1.mod(p).multiply(y2.mod(p)).mod(p);
+        BigInteger y1x2 = y1.mod(p).multiply(x2.mod(p)).mod(p);
 
-        BigInteger x1x2 = x1.multiply(x2).mod(p);
-        BigInteger y1y2 = y1.multiply(y2).mod(p);
+        BigInteger x1x2 = x1.mod(p).multiply(x2.mod(p)).mod(p);
+        BigInteger y1y2 = y1.mod(p).multiply(y2.mod(p)).mod(p);
 
         BigInteger x1x2y1y2 = x1y2.multiply(y1x2).mod(p);
-        BigInteger dx = d.multiply(x1x2y1y2).mod(p);
-
-        x = x1y2.add(y1x2).mod(p).divide(BigInteger.ONE.add(dx).mod(p)).mod(p);
-        y = y1y2.subtract(x1x2).mod(p).divide(BigInteger.ONE.subtract(dx).mod(p)).mod(p);
+        BigInteger dx = d.mod(p).multiply(x1x2y1y2).mod(p);
+        
+        BigInteger xu=x1y2.add(y1x2).mod(p);
+        BigInteger xd=BigInteger.ONE.add(dx).mod(p);
+                
+        BigInteger yu=y1y2.subtract(x1x2).mod(p);
+        BigInteger yd=BigInteger.ONE.subtract(dx).mod(p);
+        x = xu.multiply(xd.modInverse(p)).mod(p);
+        y = yu.multiply(yd.modInverse(p)).mod(p);
 
         BigInteger[] result = {x, y};
-//        System.out.println("("+result[0]+","+result[1]+")");
         return result;
     }
 
@@ -95,7 +107,8 @@ public class PollardsRho {
         return b;
     }
 
-    public static BigInteger[] rho(BigInteger[] a, BigInteger[] b, BigInteger d, BigInteger p, BigInteger n) {
+    public static BigInteger[] rho(BigInteger[] a, BigInteger[] b, 
+            BigInteger d, BigInteger p, BigInteger n) throws Exception {
         BigInteger m = null;
         BigInteger k = ZERO;
         BigInteger ai = ZERO, bi = ZERO, a2i = ZERO, b2i = ZERO;
@@ -103,49 +116,68 @@ public class PollardsRho {
 
         while (true) {
             k = k.add(ONE);
-            if (zi[0].mod(THREE) == ZERO) {
+            System.err.println("pollardsrho.PollardsRho.rho()");
+            System.err.println(" k="+k);
+            System.err.println("a="+"("+a[0]+","+a[1]+")");
+            System.err.println("b="+"("+b[0]+","+b[1]+")");
+            System.err.print("zi="+"("+zi[0]+","+zi[1]+")");
+            System.err.println(" z2i="+"("+z2i[0]+","+z2i[1]+")");
+            if (zi[0].mod(THREE).equals(ZERO)) {
                 zi = mul(b, zi, d, p);
-                ai = ai.add(ONE).mod(p);
-            } else if (zi[0].mod(THREE) == ONE) {
+                ai = ai.add(ONE).mod(n);
+            } else if (zi[0].mod(THREE).equals(ONE)) {
                 zi = mul(zi, zi, d, p);
-                ai = ai.add(ai).mod(p);
-                bi = bi.add(bi).mod(p);
+                ai = ai.add(ai).mod(n);
+                bi = bi.add(bi).mod(n);
 
-            } else if (zi[0].mod(THREE) == TWO) {
+            } else if (zi[0].mod(THREE).equals(TWO)) {
                 zi = mul(a, zi, d, p);
-                bi = bi.add(ONE).mod(p);
-            }
+                bi = bi.add(ONE).mod(n);
+            }else{
+                    throw new Exception("zi move err");
+                    }
+            
 
             for (int i = 0; i < 2; i++) {
-                if (z2i[0].mod(THREE) == ZERO) {
+                if (z2i[0].mod(THREE).equals(ZERO)) {
                     z2i = mul(b, z2i, d, p);
-                    a2i = a2i.add(ONE).mod(p);
-                } else if (z2i[0].mod(THREE) == ONE) {
+                    a2i = a2i.add(ONE).mod(n);
+                } else if (z2i[0].mod(THREE).equals(ONE)) {
                     z2i = mul(z2i, z2i, d, p);
-                    a2i = a2i.add(a2i).mod(p);
-                    b2i = b2i.add(b2i).mod(p);
+                    a2i = a2i.add(a2i).mod(n);
+                    b2i = b2i.add(b2i).mod(n);
 
-                } else if (z2i[0].mod(THREE) == TWO) {
+                } else if (z2i[0].mod(THREE).equals(TWO)) {
                     z2i = mul(a, z2i, d, p);
-                    b2i = b2i.add(ONE).mod(p);
+                    b2i = b2i.add(ONE).mod(n);
                 }
+                else{
+                    throw new Exception("z2i move err");
+                    }
             }
-            if(zi.equals(z2i))
+            
+
+            if(zi[0].equals(z2i[0])&&zi[1].equals(z2i[1]))
                 break;
         }
+        //TODO something is wrong here
+        //cause collision do happens, but m and _m doesn't match
         
-        m=b2i.subtract(bi).mod(n).divide(ai.subtract(a2i).mod(n)).mod(n);
+        m=b2i.subtract(bi).mod(n).multiply(ai.subtract(a2i).mod(n).modInverse(n)).mod(n);
 
         BigInteger[] result = {m, k};
         return result;
     }
 
-    public static long check(BigInteger[] a, BigInteger d, BigInteger p, BigInteger n) {
-        BigInteger m=new BigInteger(n.bitLength(), new Random());
+    public static long check(BigInteger[] a, BigInteger d, BigInteger p, BigInteger n) throws Exception {
+        BigInteger m=new BigInteger(n.bitLength(), new Random()).mod(n);
         BigInteger[] b=exp(a, m, d, p);
+        System.err.println("pollardsrho.PollardsRho.check()");
+        System.err.println("a="+"("+a[0]+","+a[1]+")");
+        System.err.println("b="+"("+b[0]+","+b[1]+")");
         BigInteger[] testResult=rho(a, b, d, p, n);
         BigInteger _m=testResult[0];
-        
+        System.err.println("m="+m+", _m="+_m);
         if(!m.equals(_m))
             throw new RuntimeException();
         return testResult[1].longValue();
