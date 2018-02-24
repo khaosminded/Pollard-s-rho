@@ -30,7 +30,7 @@ public class PollardsRho {
     public static void main(String[] args) {
         System.err.close();
         
-        int N=100;
+        int N=1000;
         long k=0;
         long tmp=(2<<15)-17;
         BigInteger p = new BigInteger(tmp+"");
@@ -163,6 +163,7 @@ public class PollardsRho {
         }
         //TODO something is wrong here
         //cause collision do happens, but m and _m doesn't match
+        //fixed
         
         m=b2i.subtract(bi).mod(n).multiply(ai.subtract(a2i).mod(n).modInverse(n)).mod(n);
 
